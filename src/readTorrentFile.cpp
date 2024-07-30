@@ -2,12 +2,9 @@
 #include"../include/isValidTorrentFile.hpp"
 
 
-bencodeParser* Head;
-bencodeParser* Tail;
-
 readTorrentFile::readTorrentFile(std::string &fileName): fileName(fileName){
-    Head = nullptr;
-    Tail = nullptr;
+    this->Head = nullptr;
+    this->Tail = nullptr;
     //check if file is a valid torrennt file
     validTorrentFile validTorrent(this->fileName);
     if(validTorrent.computeTorrentFile()){
@@ -88,37 +85,19 @@ void readTorrentFile::innerProcess(){
             tempFileContent[counter] = reinterpret_cast<unsigned char*>(const_cast<char*>(combinedLines.c_str()))[counter];
         }
         else{
-            tempFileContent[counter] = '1'; //replace such character with that
+            tempFileContent[counter] = '0'; //replace such character with that
         }
     }
 
-    //this->lexer(reinterpret_cast<unsigned char*>(const_cast<char*>(combinedLines.c_str())));
-    std::cout<<tempFileContent<<std::endl;
-    //std::cout<<reinterpret_cast<unsigned char*>(const_cast<char*>(combinedLines.c_str()))<<std::endl;
     this->lexer(tempFileContent);
-    this->readBencode(Head);
-    //use loop to fill up the buffer
-    /*lint_16 counter = 0;
-    for(;counter<this->fileSize-1;counter++){
-        //buffer[counter] = fileContent[counter];
-        std::cout<<fileContent.at(counter)<<std::endl;
-    }*/
-    //buffer[fileSize+1] = '\0';
-    //read file
-    //can just use low level C stuff here
-    //lint_16 readSize = fread(buffer,1,this->fileSize,this->TorrentFile);
-    //buffer[this->fileSize] = '\0';
-    //assert(readSize == this->fileSize);
-    //std::cout<<buffer<<std::endl;
-    //this->lexer(fileContent.c_str());
-    //this->lexer(reinterpret_cast<unsigned char*>(const_cast<char*>(fileContent.c_str())));
-    //std::cout<<fileContent.at(0)<<std::endl;
+    this->readBencode(this->Head);
+
 }
 
 lint_16 readTorrentFile::stringToInteger(unsigned char* string){
     lint_16 res = 0;
     int i = 0;
-    for(;i<string[i] !='\0'; i++){
+    for(;string[i] !='\0'; i++){
         res = (res * 10) + (string[i] - '0');
     }
     return res;
@@ -137,7 +116,7 @@ lint_16 readTorrentFile::lexer(const unsigned char *stream) {
         exit(-1);
     }
 
-    bencodeParser* element = new bencodeParser;
+    bencodeParser* element = new bencodeParser; //creates space in memory
     if (element == nullptr) {
         std::cout << "Unable To allocate memory" << std::endl;
         exit(-1);
@@ -161,6 +140,7 @@ lint_16 readTorrentFile::lexer(const unsigned char *stream) {
         }
         lexerResult[pointer2] = '\0';
         element->value.integerValue = this->stringToInteger(lexerResult);
+        std::cout<<element->value.integerValue<<std::endl;
         pointer++; // skip 'e'
     } else if (stream[pointer] == BencoderValues.LIST) {
         element->dataType = "List";
@@ -193,25 +173,23 @@ lint_16 readTorrentFile::lexer(const unsigned char *stream) {
         }
         memcpy(element->value.stringValue, &stream[pointer], lengthOfString);
         element->value.stringValue[lengthOfString] = '\0';
+        std::cout<<element->value.stringValue<<std::endl;
         pointer += lengthOfString;
     }
 
-    if (Head == nullptr) {
-        Head = element;
-        Tail = element;
+    if (this->Head == nullptr) {
+        this->Head = element;
+        this->Tail = element;
     } else {
-        Tail->next = element;
-        Tail = element;
+        this->Tail->next = element;
+        this->Tail = element;
     }
-
     return pointer;
 }
 
 
-
 void readTorrentFile::readBencode(bencodeParser *Head){
 	while(Head){
-        //std::cout<<Head->dataType<<std::endl;
 		if(compare(Head->dataType) == 1){
 			std::cout<<Head->value.stringValue<<std::endl;
 		}
@@ -219,7 +197,7 @@ void readTorrentFile::readBencode(bencodeParser *Head){
 			std::cout<<Head->value.integerValue<<std::endl;
 		}
 		else if(compare(Head->dataType) == 3 || compare(Head->dataType) == 3){
-			readBencode(Head->value.List_Dictionary);
+            this->readBencode(Head->value.List_Dictionary);
 		}
         else{
             std::cout<<"Unable to find"<<std::endl;
@@ -240,7 +218,7 @@ int readTorrentFile::compare(std::string string){
     
 	if(string == "String") return 1;
 	if(string == "Integer") return 2;
-	if((string == "List") || string == "Dictionary") return 3;
+	if((string == "List") || (string == "Dictionary")) return 3;
     return -1;
 }
 

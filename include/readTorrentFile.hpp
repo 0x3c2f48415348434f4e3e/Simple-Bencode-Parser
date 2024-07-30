@@ -29,6 +29,8 @@ private:
     lint_16 stringToInteger(unsigned char* string);
     void readBencode(bencodeParser *Head);
     int compare(std::string string);
+    bencodeParser* Head;
+    bencodeParser* Tail;
 
     BENCODEVALUES BencoderValues;
 
